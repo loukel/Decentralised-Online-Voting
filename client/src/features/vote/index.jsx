@@ -113,7 +113,7 @@ const Vote = () => {
             </tbody>
           </table>
         </div>
-        <div className='card-actions items-center'>
+        <div className='card-actions mx-auto'>
           <button className='btn btn-secondary w-40'>Submit</button>
         </div>
       </div>
