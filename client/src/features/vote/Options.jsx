@@ -1,6 +1,4 @@
 const Options = ({ options, selectedOption, setSelectedOption }) => {
-  console.log(selectedOption)
-
   return (
     <div className='overflow-x-auto my-4 cursor-pointer'>
       <table className='table'>
@@ -17,8 +15,8 @@ const Options = ({ options, selectedOption, setSelectedOption }) => {
             <tr
               className={
                 option.id === selectedOption?.id
-                  ? 'bg-secondary text-white'
-                  : 'hover:bg-base-200'
+                  ? 'select-none bg-secondary text-white'
+                  : 'select-none hover:bg-base-200'
               }
               onClick={(e) => setSelectedOption(option)}
             >
