@@ -1,11 +1,21 @@
-const { PrismaClient } = require('@prisma')
+const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 
 const create_event = async (req, res) => {
   const data = req.body
   try {
+    const options = data?.options
+    delete data.options
     const event = await prisma.event.create({
-      data,
+      data: {
+        ...data,
+        options: {
+          create: options,
+        },
+      },
+      include: {
+        options: true,
+      },
     })
 
     res.status(201).send(event)
@@ -15,14 +25,9 @@ const create_event = async (req, res) => {
   }
 }
 
-const get_event = async (req, res) => {
-  const id = req.params.id
-
+const get_events = async (req, res) => {
   try {
-    const event = await prisma.event.findFirst({
-      where: {
-        id,
-      },
+    const events = await prisma.event.findMany({
       include: {
         options: {
           include: {
@@ -32,7 +37,7 @@ const get_event = async (req, res) => {
       },
     })
 
-    res.status(204).send(event)
+    res.status(200).send(events)
   } catch (error) {
     console.error(error)
     res.sendStatus(500)
@@ -41,5 +46,5 @@ const get_event = async (req, res) => {
 
 module.exports = {
   create_event,
-  get_event,
+  get_events,
 }

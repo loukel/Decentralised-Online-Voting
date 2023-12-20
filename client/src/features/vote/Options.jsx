@@ -37,7 +37,9 @@ const Options = ({ options, selectedOption, setSelectedOption }) => {
                 <div className='flex items-center gap-3'>
                   <div>
                     <div className='font-bold'>{option.name}</div>
-                    <div className='text-sm opacity-50'>{option.group}</div>
+                    <div className='text-sm opacity-50'>
+                      {option.descriptor}
+                    </div>
                   </div>
                 </div>
               </td>
