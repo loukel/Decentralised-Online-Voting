@@ -1,8 +1,14 @@
 import { useState } from 'react'
 import Options from './Options'
+import { createVote } from '../../services/voteApi'
+import { useNavigate } from 'react-router-dom'
 
 const Vote = ({ event }) => {
-  const [selectedOption, setSelectedOption] = useState()
+  const navigate = useNavigate()
+
+  const [id, setId] = useState('')
+  const [secretKey, setSecretKey] = useState('')
+  const [selectedOption, setSelectedOption] = useState(-1)
 
   // const options = [
   //   {
@@ -27,6 +33,24 @@ const Vote = ({ event }) => {
   //   },
   // ]
 
+  const onSubmit = async () => {
+    if (!id) {
+      return alert('Missing ID')
+    } else if (!secretKey) {
+      return alert('Enter Secret Key')
+    } else if (selectedOption === -1) {
+      return alert('Select an option to vote for')
+    }
+
+    const data = {
+      userId: id,
+      secretKey,
+      optionId: selectedOption.id,
+    }
+    const vote = await createVote(data)
+    navigate(`/results?hasedUserId=${vote.hashedUserId}`)
+  }
+
   if (event === -1) {
     return (
       <div class='card w-full bg-base-100 shadow-xl'>
@@ -50,6 +74,8 @@ const Vote = ({ event }) => {
             type='text'
             placeholder='Type here'
             className='input input-bordered w-full'
+            value={id}
+            onChange={(e) => setId(e.target.value)}
           />
         </label>
         {/* Secret Key input */}
@@ -61,6 +87,8 @@ const Vote = ({ event }) => {
             type='password'
             placeholder='Type here'
             className='input input-bordered w-full'
+            value={secretKey}
+            onChange={(e) => setSecretKey(e.target.value)}
           />
         </label>
         <Options
@@ -69,7 +97,9 @@ const Vote = ({ event }) => {
           setSelectedOption={setSelectedOption}
         />
         <div className='card-actions mx-auto'>
-          <button className='btn btn-secondary w-40'>Submit</button>
+          <button className='btn btn-secondary w-40' onClick={onSubmit}>
+            Submit
+          </button>
         </div>
       </div>
     </div>

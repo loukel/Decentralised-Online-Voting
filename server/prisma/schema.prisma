@@ -29,8 +29,7 @@ model EventOption {
 }
 
 model Vote {
-  id           Int         @id @default(autoincrement())
-  hashedUserId String
+  hashedUserId String      @unique
   optionId     Int
   option       EventOption @relation(fields: [optionId], references: [id])
 }

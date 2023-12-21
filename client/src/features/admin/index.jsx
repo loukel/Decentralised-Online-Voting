@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { createEvent } from '../../services/eventApi'
 import { useNavigate } from 'react-router-dom'
 
-const Admin = ({ events }) => {
+const Admin = ({ events, setEvents }) => {
   // Check if event is currently running
   // If not enable the creation of another + options
   const navigate = useNavigate()
@@ -149,7 +149,8 @@ const Admin = ({ events }) => {
       return alert('Event already taking place at this time')
     }
 
-    await createEvent(data)
+    const event = await createEvent(data)
+    setEvents([...events, event])
     navigate('/')
   }
 

@@ -4,8 +4,14 @@ const prisma = new PrismaClient()
 const create_vote = async (req, res) => {
   const data = req.body
   try {
+    // Hash user identity
+    const hashedUserId = data.userId + data.secretKey
+
     const vote = await prisma.vote.create({
-      data,
+      data: {
+        hashedUserId,
+        optionId: data.optionId,
+      },
     })
 
     res.status(201).send(vote)

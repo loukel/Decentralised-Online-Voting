@@ -12,18 +12,21 @@ export const AppRoutes = () => {
 
   useEffect(() => {
     getEvents().then((events) => {
-      events.forEach((event_) => {
-        if (
-          new Date(event_.startDateTime) < new Date() &&
-          new Date(event_.endDateTime) > new Date()
-        ) {
-          return setEvent(event_)
-        }
-      })
       setEvents(events)
       setLoading(false)
     })
   }, [])
+
+  useEffect(() => {
+    events.forEach((event_) => {
+      if (
+        new Date(event_.startDateTime) < new Date() &&
+        new Date(event_.endDateTime) > new Date()
+      ) {
+        return setEvent(event_)
+      }
+    })
+  }, [events])
 
   if (!loading)
     return (
@@ -31,7 +34,10 @@ export const AppRoutes = () => {
         <Routes>
           <Route path='/' element={<Vote event={event} />} />
           <Route path='/results' element={<Results event={event} />} />
-          <Route path='/admin' element={<Admin events={events} />} />
+          <Route
+            path='/admin'
+            element={<Admin events={events} setEvents={setEvents} />}
+          />
         </Routes>
       </Router>
     )
