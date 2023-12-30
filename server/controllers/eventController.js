@@ -14,7 +14,11 @@ const create_event = async (req, res) => {
         },
       },
       include: {
-        options: true,
+        options: {
+          include: {
+            votes: true,
+          },
+        },
       },
     })
 

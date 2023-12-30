@@ -1,11 +1,18 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
+const CryptoJS = require('crypto-js')
+
+const hashIdentity = (plaintext, secretKey) => {
+  return CryptoJS.HmacSHA256(plaintext, secretKey).toString()
+}
 
 const create_vote = async (req, res) => {
   const data = req.body
   try {
+    // Check user hasn't voted already -> in future to ensure it isn't store whether a user has voted already -> use digital signaturess
+
     // Hash user identity
-    const hashedUserId = data.userId + data.secretKey
+    const hashedUserId = hashIdentity(data.userId, data.secretKey)
 
     const vote = await prisma.vote.create({
       data: {
