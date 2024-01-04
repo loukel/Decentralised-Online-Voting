@@ -10,6 +10,7 @@ const create_vote = async (req, res) => {
   const data = req.body
   try {
     // Check user hasn't voted already -> in future to ensure it isn't store whether a user has voted already -> use digital signaturess
+    // Make it so user provides public key, then store the public key -> user's identity is public key (secret key), identity is stored in another table?
 
     // Hash user identity
     const hashedUserId = hashIdentity(data.userId, data.secretKey)
