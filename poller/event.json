@@ -1,0 +1,26 @@
+{
+  "name": "General Election",
+  "description": "",
+  "startDateTime": "01/01/01",
+  "endDateTime": "01/01/01",
+  "options": [
+    {
+      "id": "1",
+      "name": "Boris Johnson",
+      "descriptor": "Conservatives",
+      "imageUrl": ""
+    },
+    {
+      "id": "2",
+      "name": "Jeremy Corbyn",
+      "descriptor": "Labour",
+      "imageUrl": ""
+    },
+    {
+      "id": "3",
+      "name": "Holly Smokes",
+      "descriptor": "Green Party",
+      "imageUrl": ""
+    }
+  ]
+}
