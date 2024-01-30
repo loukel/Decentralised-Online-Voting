@@ -1,4 +1,6 @@
 from block import Block
+from event import EventBlock
+import time
 
 class Blockchain:
     difficulty = 1
@@ -6,6 +8,8 @@ class Blockchain:
     def __init__(self, eventLoc='event.json'):
         self.mempool = []
         self.chain = []
+
+        self.create_genesis_block(eventLoc)
 
     @classmethod
     def load(cls, chain):
@@ -16,7 +20,34 @@ class Blockchain:
 
         return blockchain
     
+    @property
+    def last_event(self):
+        for block in self.chain[::-1]:
+            if block.event:
+                return block
+    
+    def create_genesis_block(self, eventLoc, register='register.txt'):
+        register_file = open(register, 'r')
+        public_ids = register_file.read().splitlines()
+
+        transactions = [{
+            "amount": 1,
+            "receiver": pk,
+            "sender": 'coinbase',
+        } for pk in public_ids]
+
+        genesis_block = EventBlock(eventLoc=eventLoc, index=0, transactions=transactions, timestamp=time.time(), previous_hash="0", nonce=0)
+
+        self.proof_of_work(genesis_block)
+
+        genesis_block.hash = genesis_block.compute_hash()
+
+        self.chain.append(genesis_block)
+
+    
     def add_transaction(self, transaction):
+        # tx includes amount, sender ('coinbase' for minted / candidate address), receiver
+
         self.mempool.append(transaction)
         print(self.mempool)
     

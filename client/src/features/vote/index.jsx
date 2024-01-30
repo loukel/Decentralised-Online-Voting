@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Options from './Options'
-import { createVote } from '../../services/voteApi'
+import { submitVote } from '../../services/voteApi'
 import { useNavigate } from 'react-router-dom'
 
 const Vote = ({ event }) => {
@@ -10,45 +10,20 @@ const Vote = ({ event }) => {
   const [secretKey, setSecretKey] = useState('')
   const [selectedOption, setSelectedOption] = useState(-1)
 
-  // const options = [
-  //   {
-  //     name: 'Hart Hagerty',
-  //     group: 'Liberal Democrats',
-  //     id: '3',
-  //   },
-  //   {
-  //     name: 'Brice Swyre',
-  //     group: 'Green Party',
-  //     id: '2',
-  //   },
-  //   {
-  //     name: 'Marjy Ferencz',
-  //     group: 'Labour',
-  //     id: '1',
-  //   },
-  //   {
-  //     name: 'Yancy Tear',
-  //     group: 'Conservative',
-  //     id: '4',
-  //   },
-  // ]
-
   const onSubmit = async () => {
     if (!id) {
       return alert('Missing ID')
-    } else if (!secretKey) {
-      return alert('Enter Secret Key')
     } else if (selectedOption === -1) {
       return alert('Select an option to vote for')
     }
 
-    const data = {
-      userId: id,
-      secretKey,
-      optionId: selectedOption.id,
+    const txData = {
+      amount: 1,
+      sender: id,
+      receiver: selectedOption.id,
     }
-    const vote = await createVote(data)
-    navigate(`/results?hasedUserId=${vote.hashedUserId}`)
+    const vote = await submitVote(txData)
+    navigate(`/results`)
   }
 
   if (event === -1) {
@@ -79,7 +54,7 @@ const Vote = ({ event }) => {
           />
         </label>
         {/* Secret Key input */}
-        <label className='form-control w-full'>
+        {/* <label className='form-control w-full'>
           <div className='label'>
             <span className='label-text text-secondary'>Secret Key</span>
           </div>
@@ -90,9 +65,9 @@ const Vote = ({ event }) => {
             value={secretKey}
             onChange={(e) => setSecretKey(e.target.value)}
           />
-        </label>
+        </label> */}
         <Options
-          options={event.options}
+          options={event.candidates}
           selectedOption={selectedOption}
           setSelectedOption={setSelectedOption}
         />

@@ -1,3 +1,5 @@
+# Copied from https://github.com/ngocbh/voting-blockchain/blob/master/bcb_server/blockchain.py
+
 from hashlib import sha256
 import json
 

@@ -1,1 +1,1 @@
-export const apiUrl = import.meta.env.VITE_API
+export const pollerUrls = import.meta.env.VITE_TRUSTED_APIS.split(',')

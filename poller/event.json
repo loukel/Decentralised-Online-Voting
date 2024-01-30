@@ -1,26 +1,20 @@
 {
   "name": "General Election",
   "description": "",
-  "startDateTime": "01/01/01",
-  "endDateTime": "01/01/01",
-  "options": [
+  "start_date": "01/01/01",
+  "end_date": "01/01/01",
+  "candidates": [
     {
-      "id": "1",
-      "name": "Boris Johnson",
-      "descriptor": "Conservatives",
-      "imageUrl": ""
+      "id": "a7f2d8cedf7473d61b0277d8e54a9ce844b4fa055260d63dc71833d798f8c942",
+      "name": "John Smith"
     },
     {
-      "id": "2",
-      "name": "Jeremy Corbyn",
-      "descriptor": "Labour",
-      "imageUrl": ""
+      "id": "d5219fb2b3fd90936b191bd185b8b26a7ced3033e4cb892730f4ddebfcd2d561",
+      "name": "Jeremy Corbyn"
     },
     {
-      "id": "3",
-      "name": "Holly Smokes",
-      "descriptor": "Green Party",
-      "imageUrl": ""
+      "id": "5ce9750b523af67abb6e7df65e79647ffcee7cfdd4ac6fd51af494548b33e626",
+      "name": "Boris Johnson"
     }
   ]
 }

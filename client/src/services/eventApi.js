@@ -1,28 +1,24 @@
 import axios from 'axios'
-import { apiUrl } from '../constants'
+import { pollerUrls } from '../constants'
 
-const createEvent = async (data) => {
-  try {
-    const res = await axios({
-      method: 'POST',
-      url: `${apiUrl}/events/`,
-      data,
-    })
-    return res.data
-  } catch (error) {
-    console.error(error)
-    return error
+const getEvent = async () => {
+  // Send request to every trusted poller
+  const requests = pollerUrls.map((addr) =>
+    axios.get(`${addr}/event`).catch((err) => err)
+  )
+
+  const responses = await Promise.all(requests)
+
+  const successfulResponses = responses.filter(
+    (response) => response && response.status === 200
+  )
+
+  const event = successfulResponses[0]
+  if (successfulResponses.every((element) => element == event)) {
+    return event.data
+  } else {
+    return {}
   }
 }
 
-const getEvents = async (id) => {
-  try {
-    const res = await axios.get(`${apiUrl}/events`)
-    return res.data
-  } catch (error) {
-    console.error(error)
-    return error
-  }
-}
-
-export { createEvent, getEvents }
+export { getEvent }
