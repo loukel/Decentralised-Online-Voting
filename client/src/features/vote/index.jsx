@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import Options from './Options'
-import { submitVote } from '../../services/voteApi'
+import { broadcastVote } from '../../services/voteApi'
 import { useNavigate } from 'react-router-dom'
 
 const Vote = ({ event }) => {
   const navigate = useNavigate()
 
   const [id, setId] = useState('')
-  const [secretKey, setSecretKey] = useState('')
+  // const [secretKey, setSecretKey] = useState('')
   const [selectedOption, setSelectedOption] = useState(-1)
 
   const onSubmit = async () => {
@@ -22,8 +22,11 @@ const Vote = ({ event }) => {
       sender: id,
       receiver: selectedOption.id,
     }
-    const vote = await submitVote(txData)
-    navigate(`/results`)
+    const received = await broadcastVote(txData)
+    setId('')
+    setSelectedOption(-1)
+    console.log(received)
+    // navigate(`/results`)
   }
 
   if (event === -1) {

@@ -9,15 +9,37 @@ import {
   LinearScale,
 } from 'chart.js'
 
-const Results = ({ event }) => {
+const Results = ({ event, chain }) => {
   ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale)
 
   if (event === -1) {
     return 'no event'
   }
 
-  const votes = event.options.map((option) => option.votes.length)
-  const options = event.options.map((option) => option.name)
+  console.log(event)
+
+  const votesData = chain
+    .slice(1)
+    .reduce((acc, obj) => acc.concat(obj.transactions), [])
+
+  let options = [...new Set(votesData.map((vote) => vote.receiver))]
+  const votes = options.map(
+    (id) => votesData.filter((vote) => vote.receiver == id).length
+  )
+
+  // Clean up the display of options
+  options = options.map((id) => {
+    const candidateDetails = event.candidates.filter(
+      (candidate) => candidate.id == id
+    )
+
+    if (candidateDetails.length) {
+      return candidateDetails[0].name
+    } else {
+      return id
+    }
+  })
+
   const totalVotes = votes.reduce((acc, curr) => acc + curr, 0)
 
   const data = {
@@ -44,9 +66,9 @@ const Results = ({ event }) => {
         <div className='h-96 flex justify-center m-5'>
           <Pie ref={chartRef} data={data} />
         </div>
-        <div className='flex gap-5 justify-center'>
+        <div className='flex gap-5 justify-center flex-wrap'>
           {options.map((option, index) => (
-            <div>
+            <div className='overflow-hidden text-ellipsis break-normal w-1/3'>
               <b>{option}:</b>{' '}
               {Math.round(((votes[index] * 100) / totalVotes) * 10) / 10}%
             </div>

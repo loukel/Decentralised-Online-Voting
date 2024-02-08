@@ -1,10 +1,10 @@
 import axios from 'axios'
 import { pollerUrls } from '../constants'
 
-const getEvent = async () => {
+const getChain = async () => {
   // Send request to every trusted poller
   const requests = pollerUrls.map((addr) =>
-    axios.get(`${addr}/event`).catch((err) => err)
+    axios.get(`${addr}/chain`).catch((err) => err)
   )
 
   const responses = await Promise.all(requests)
@@ -13,11 +13,11 @@ const getEvent = async () => {
     (response) => response && response.status === 200
   )
 
-  const events = successfulResponses.map((res) => res.data)
+  const chains = successfulResponses.map((res) => res.data)
 
-  // Get the mode event
+  // Get the mode chain
 
-  return events[0]
+  return chains[0]
 }
 
-export { getEvent }
+export { getChain }

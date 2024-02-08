@@ -8,7 +8,7 @@ class Block:
         self.index = index
         self.transactions = transactions
         self.timestamp = timestamp
-        self.previous_hash = previous_hash
+        self.previous_hash = str(previous_hash)
         self.nonce = nonce
 
     @staticmethod
@@ -28,4 +28,5 @@ class Block:
         A function that return the hash of the block contents.
         """
         block_string = json.dumps(self.__dict__, sort_keys=True)
+        
         return sha256(block_string.encode()).hexdigest()
