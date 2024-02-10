@@ -65,6 +65,7 @@ def add_block():
     # Validate Block: txs are in mempool, hash is from block, hash is correct
     if blockchain.valid_block(block):
         if block.previous_hash == previous_block.hash:
+            blockchain.stop_mining()
             blockchain.add_block(block)
             return "Success", 201
         elif block.index > previous_block.index:
@@ -77,8 +78,7 @@ def add_block():
                 new_blockchain = blockchain.template(data)
 
                 if new_blockchain.valid:
-                    blockchain.mining.stop()
-                    blockchain.mining.join()
+                    blockchain.stop_mining()
                     blockchain = new_blockchain
 
                     # Remove added transactions

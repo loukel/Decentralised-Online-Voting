@@ -11,10 +11,10 @@ class Blockchain:
     def __init__(self):
         self.mempool = []
         self.chain = []
-        self.mining = None
         self.pollers = []
         self.ip = ''
         self.port = ''
+        self.interrupt_mining = False
 
     @classmethod
     def load(cls, chain):
@@ -102,7 +102,6 @@ class Blockchain:
         # tx includes amount, sender ('coinbase' for minted / candidate address), receiver
         # Validate tx
         if self.validate_tx(transaction):
-            print('1')
             self.mempool.append(transaction)
 
             # Or pass end_date
@@ -117,15 +116,13 @@ class Blockchain:
         self.mempool = [tx for tx in self.mempool if tx not in block.transactions]
 
     def start_mining(self):
-        if len(self.mempool) >= Blockchain.tx_per_block and not self.mining:
-            self.mining = threading.Thread(target=self.mine)
-            self.mining.daemon = True
-            self.mining.start()
+        if len(self.mempool) >= Blockchain.tx_per_block:
+            self.mine()
+
+    def stop_mining(self):
+        self.interrupt_mining = True
     
     def mine(self):
-        print('Started mining')
-        if self.port != 5001:
-            time.sleep(20)
         last_block = self.last_block
 
         transactions = self.mempool[0:Blockchain.tx_per_block]
@@ -134,6 +131,10 @@ class Blockchain:
                 transactions=transactions,
                 timestamp=time.time(),
                 previous_hash=last_block.hash)
+        
+        print('Started mining')
+        if self.port != 5001:
+            time.sleep(5)
         
         # What happens if block receives a block before proof is calculated or at the same etc -> requires thread that stops in this case
         proof = self.proof_of_work(new_block)
@@ -162,6 +163,8 @@ class Blockchain:
                     continue
 
             print('Finished broadcasting new block', f'{len(self.pollers) - failed_broadcasts}/{len(self.pollers)}')
+        else:
+            print('Mining stopped abruptly')
 
     def proof_of_work(self, block):
         """
@@ -173,9 +176,13 @@ class Blockchain:
         block.nonce = Block.random_nonce()
 
         computed_hash = block.compute_hash()
-        while not self.valid_hash(computed_hash):
+        while not self.valid_hash(computed_hash) and not self.interrupt_mining:
             block.nonce = Block.random_nonce()
             computed_hash = block.compute_hash()
+
+        if self.interrupt_mining:
+            print("Mining interrupted.")
+            return None
 
         return computed_hash if self.valid_hash(computed_hash) else None
     
@@ -233,7 +240,11 @@ class Blockchain:
         block_hash = block.hash
         delattr(block, "hash")
 
-        return Blockchain.is_valid_proof(block, block_hash)
+        if Blockchain.is_valid_proof(block, block_hash):
+           block.hash = block_hash
+           return True 
+        else:
+            return False
 
     def refresh_mempool(self):
         added_transactions = self.transactions
