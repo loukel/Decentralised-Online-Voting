@@ -1,7 +1,8 @@
 from block import Block
 from event import EventBlock, load_event
 import time
-import numpy as np
+import threading
+import requests
 
 class Blockchain:
     difficulty = 3
@@ -10,7 +11,10 @@ class Blockchain:
     def __init__(self):
         self.mempool = []
         self.chain = []
-        self.mining = False
+        self.mining = None
+        self.pollers = []
+        self.ip = ''
+        self.port = ''
 
     @classmethod
     def load(cls, chain):
@@ -22,6 +26,18 @@ class Blockchain:
                 blockchain.chain.append(Block.load(block))
 
         return blockchain
+    
+    # Load new chain returning a new object based on this one
+    def template(self, chain):
+        blockchain = Blockchain.load(chain)
+
+        blockchain.mempool = self.mempool
+        blockchain.pollers = self.pollers
+        blockchain.ip = self.ip
+        blockchain.port = self.port
+
+        return blockchain
+        
     
     @property
     def last_event(self):
@@ -62,12 +78,8 @@ class Blockchain:
         if transaction['amount'] != 1:
             return False
 
-        transactions = []
-        for block in self.chain:
-            transactions.extend(block.transactions)
-
         bal = 0
-        for tx in transactions:
+        for tx in self.transactions:
             if tx['sender'] == transaction['sender']:
                 bal -= tx['amount']
             if tx['receiver'] == transaction['sender']:
@@ -79,6 +91,13 @@ class Blockchain:
         
         return True
     
+    @property
+    def transactions(self):
+        T = []
+        for block in self.chain:
+            T.extend(block.transactions)
+        return T
+        
     def add_transaction(self, transaction):
         # tx includes amount, sender ('coinbase' for minted / candidate address), receiver
         # Validate tx
@@ -87,20 +106,26 @@ class Blockchain:
             self.mempool.append(transaction)
 
             # Or pass end_date
-            if len(self.mempool) >= Blockchain.tx_per_block and not self.mining:
-                self.start_mining()
+            self.start_mining()
         else:
             raise ValueError('Invalid key')
 
-    def add_block(self, block, hash):
-        # Check validity of block
-        # Check if hash is valid and hashing the blocking generates that block
-        # If so add to chain
-        block.hash = hash
+    def add_block(self, block):
         self.chain.append(block)
-    
+
+        # Remove transactions that have been added
+        self.mempool = [tx for tx in self.mempool if tx not in block.transactions]
+
     def start_mining(self):
-        print('started mining')
+        if len(self.mempool) >= Blockchain.tx_per_block and not self.mining:
+            self.mining = threading.Thread(target=self.mine)
+            self.mining.daemon = True
+            self.mining.start()
+    
+    def mine(self):
+        print('Started mining')
+        if self.port != 5001:
+            time.sleep(20)
         last_block = self.last_block
 
         transactions = self.mempool[0:Blockchain.tx_per_block]
@@ -114,25 +139,42 @@ class Blockchain:
         proof = self.proof_of_work(new_block)
 
         if proof != None:
-            self.add_block(new_block, proof)
+            new_block.hash = proof
+            self.add_block(new_block)
+            print('Finished mining')
 
-            # Remove transactions that have been added
-            self.mempool = self.mempool[Blockchain.tx_per_block:]
+            print('Started broadcasting')
+            failed_broadcasts = 0
+            # Broadcast block to self.pollers
+            for addr in self.pollers:
+                try:
+                    headers = {
+                        "Port": str(self.port),
+                        "Ip": str(self.ip),
+                    }
+                    response = requests.post(f'http://{addr}/blocks', json=new_block.__dict__, headers=headers)
+                    print(f'Sent block to {addr}')
 
-        print('Finished mining', self.chain)
+                    response.raise_for_status()
+                except Exception as e:
+                    print(f'Failed sending block to {addr} - {e}')
+                    failed_broadcasts += 1
+                    continue
 
-        # Send other pollers block
+            print('Finished broadcasting new block', f'{len(self.pollers) - failed_broadcasts}/{len(self.pollers)}')
 
     def proof_of_work(self, block):
         """
         Function that tries different values of nonce to get a hash
         that satisfies our difficulty criteria.
         """
-        block.nonce = 0
+        # block.nonce = 0
+        # For showcasing the functionality of the code a random int will be used instead of a sequential nonce selection
+        block.nonce = Block.random_nonce()
 
         computed_hash = block.compute_hash()
         while not self.valid_hash(computed_hash):
-            block.nonce += 1
+            block.nonce = Block.random_nonce()
             computed_hash = block.compute_hash()
 
         return computed_hash if self.valid_hash(computed_hash) else None
@@ -153,6 +195,7 @@ class Blockchain:
     def valid(self):
         result = True
         previous_hash = "0"
+        index = 0
 
         for block in self.chain:
             block_hash = block.hash
@@ -160,11 +203,39 @@ class Blockchain:
             # using `compute_hash` method.
             delattr(block, "hash")
 
+            # 1a. Is the hash generated from the block
+            # 1b. Does the hash obey the difficulty
+            # 2. Does the block have the correct previous block hash
+            # 3. Does the block have the correct sequential index  
             if not Blockchain.is_valid_proof(block, block_hash) or \
-                    previous_hash != block.previous_hash:
+                    previous_hash != block.previous_hash or \
+                        index != block.index:
                 result = False
                 break
+
+            index += 1
 
             block.hash, previous_hash = block_hash, block_hash
 
         return result
+    
+    def valid_block(self, block):
+        # 1. Check if transactions are valid
+        # Get transactions not in mempool
+        unchecked_txs = [tx for tx in block.transactions if tx not in self.mempool]
+
+        # Validate transaction
+        for tx in unchecked_txs:
+            if not self.validate_tx(tx):
+                return False
+
+        # 2. Check the hash  is validate
+        block_hash = block.hash
+        delattr(block, "hash")
+
+        return Blockchain.is_valid_proof(block, block_hash)
+
+    def refresh_mempool(self):
+        added_transactions = self.transactions
+        self.mempool = [tx for tx in self.mempool if tx not in added_transactions]
+

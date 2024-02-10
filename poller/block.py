@@ -2,8 +2,11 @@
 
 from hashlib import sha256
 import json
+import random
 
 class Block:
+    max_nonce = 2**32 - 1
+
     def __init__(self, index, transactions, timestamp, previous_hash, nonce = 0):
         self.index = index
         self.transactions = transactions
@@ -23,6 +26,10 @@ class Block:
         block.hash = block_dict['hash']
         return block
     
+    @staticmethod
+    def random_nonce():
+        return random.randint(0, Block.max_nonce)
+    
     def compute_hash(self):
         """
         A function that return the hash of the block contents.
@@ -30,3 +37,5 @@ class Block:
         block_string = json.dumps(self.__dict__, sort_keys=True)
         
         return sha256(block_string.encode()).hexdigest()
+
+    
