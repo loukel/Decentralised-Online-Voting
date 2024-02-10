@@ -14,7 +14,8 @@ class Blockchain:
         self.pollers = []
         self.ip = ''
         self.port = ''
-        self.interrupt_mining = False
+        self.interrupt_mining = threading.Event()
+        self.mining_thread = None
 
     @classmethod
     def load(cls, chain):
@@ -117,10 +118,14 @@ class Blockchain:
 
     def start_mining(self):
         if len(self.mempool) >= Blockchain.tx_per_block:
-            self.mine()
+            self.interrupt_mining.clear()
+            if self.mining_thread and self.mining_thread.is_alive():
+                return  # Mining is already running
+            self.mining_thread = threading.Thread(target=self.mine)
+            self.mining_thread.start()
 
     def stop_mining(self):
-        self.interrupt_mining = True
+        self.interrupt_mining.set()
     
     def mine(self):
         last_block = self.last_block
@@ -176,13 +181,9 @@ class Blockchain:
         block.nonce = Block.random_nonce()
 
         computed_hash = block.compute_hash()
-        while not self.valid_hash(computed_hash) and not self.interrupt_mining:
+        while not self.valid_hash(computed_hash) and not self.interrupt_mining.is_set():
             block.nonce = Block.random_nonce()
             computed_hash = block.compute_hash()
-
-        if self.interrupt_mining:
-            print("Mining interrupted.")
-            return None
 
         return computed_hash if self.valid_hash(computed_hash) else None
     
