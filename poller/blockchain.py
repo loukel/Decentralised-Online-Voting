@@ -5,7 +5,7 @@ import threading
 import requests
 
 class Blockchain:
-    difficulty = 3
+    difficulty = 5
     tx_per_block = 1
 
     def __init__(self):
@@ -138,8 +138,8 @@ class Blockchain:
                 previous_hash=last_block.hash)
         
         print('Started mining')
-        if self.port != 5001:
-            time.sleep(5)
+        # if self.port != 5001:
+            # time.sleep(5)
         
         # What happens if block receives a block before proof is calculated or at the same etc -> requires thread that stops in this case
         proof = self.proof_of_work(new_block)
@@ -172,10 +172,6 @@ class Blockchain:
             print('Mining stopped abruptly')
 
     def proof_of_work(self, block):
-        """
-        Function that tries different values of nonce to get a hash
-        that satisfies our difficulty criteria.
-        """
         # block.nonce = 0
         # For showcasing the functionality of the code a random int will be used instead of a sequential nonce selection
         block.nonce = Block.random_nonce()
@@ -184,6 +180,7 @@ class Blockchain:
         while not self.valid_hash(computed_hash) and not self.interrupt_mining.is_set():
             block.nonce = Block.random_nonce()
             computed_hash = block.compute_hash()
+            print(computed_hash)
 
         return computed_hash if self.valid_hash(computed_hash) else None
     
@@ -193,10 +190,6 @@ class Blockchain:
 
     @staticmethod
     def is_valid_proof(block, block_hash):
-        """
-        Check if block_hash is valid hash of block and satisfies
-        the difficulty criteria.
-        """
         return Blockchain.valid_hash(block_hash) and block_hash == block.compute_hash()
     
     @property
