@@ -32,4 +32,19 @@ const broadcastVote = async (data) => {
   }
 }
 
-export { broadcastVote }
+const getSignature = async (data) => {
+  try {
+    const request = await axios({
+      method: 'POST',
+      url: `${pollerUrls[0]}/sign`,
+      data,
+    })
+
+    return request.data
+  } catch (error) {
+    console.error(error)
+    return error
+  }
+}
+
+export { broadcastVote, getSignature }

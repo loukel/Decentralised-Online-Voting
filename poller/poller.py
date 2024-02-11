@@ -8,6 +8,8 @@ import time
 from dotenv import load_dotenv
 load_dotenv()
 from utils import get_ip
+from register_seeder import sign
+import json
 
 pollers = set()
 ip = 0
@@ -23,6 +25,19 @@ blockchain = Blockchain()
 @app.route('/event', methods=['GET'])
 def get_event():
     return blockchain.last_event.event
+
+@app.route('/sign', methods=['POST'])
+def sign_transaction():
+    # transaction, private key
+    # return signature
+    data = request.get_json()
+    tx = json.dumps(data['transaction'], separators=(',', ':'))
+    private_key = data['private_key']
+    
+    try:
+        return sign(private_key=private_key, plain_text=tx), 201
+    except:
+        return "Unsucessful", 501
 
 # Endpoint to add a transaction to the mempool
 @app.route('/transaction', methods=['POST'])

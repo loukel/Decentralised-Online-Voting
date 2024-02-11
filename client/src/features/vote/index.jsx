@@ -1,13 +1,14 @@
 import { useState } from 'react'
 import Options from './Options'
-import { broadcastVote } from '../../services/voteApi'
+import { broadcastVote, getSignature } from '../../services/voteApi'
 import { useNavigate } from 'react-router-dom'
+import EC from 'elliptic'
 
 const Vote = ({ event }) => {
   const navigate = useNavigate()
 
   const [id, setId] = useState('')
-  // const [secretKey, setSecretKey] = useState('')
+  const [secretKey, setSecretKey] = useState('')
   const [selectedOption, setSelectedOption] = useState(-1)
   const [countdown, setCountdown] = useState('')
   const [disabled, setDisabled] = useState(true)
@@ -75,8 +76,19 @@ const Vote = ({ event }) => {
       sender: id,
       receiver: selectedOption.id,
     }
+
+    // Create digital signature
+    // const ec = new EC.ec('secp256k1')
+    // const keyPair = ec.keyFromPrivate(secretKey)
+    // const signature = keyPair.sign(JSON.stringify(txData)).toDER('hex')
+
+    txData.signature = await getSignature({
+      private_key: secretKey,
+      transaction: txData,
+    })
+
     const received = await broadcastVote(txData)
-    setId('')
+    // setId('')
     setSelectedOption(-1)
     console.log(received)
     // navigate(`/results`)
@@ -112,7 +124,7 @@ const Vote = ({ event }) => {
           />
         </label>
         {/* Secret Key input */}
-        {/* <label className='form-control w-full'>
+        <label className='form-control w-full'>
           <div className='label'>
             <span className='label-text text-secondary'>Secret Key</span>
           </div>
@@ -123,7 +135,7 @@ const Vote = ({ event }) => {
             value={secretKey}
             onChange={(e) => setSecretKey(e.target.value)}
           />
-        </label> */}
+        </label>
         <Options
           options={event.candidates}
           selectedOption={selectedOption}

@@ -5,6 +5,8 @@ import threading
 import requests
 from datetime import datetime, timedelta
 from dateutil import parser
+from register_seeder import verify_signature
+import json
 
 class Blockchain:
     difficulty = 4
@@ -108,7 +110,7 @@ class Blockchain:
         self.chain.append(genesis_block)
     
     def validate_tx(self, transaction):
-        # Check transaction is in mempool, check spender has the funds
+        # 1. Check transaction is in mempool, check spender has the funds
         if transaction['amount'] != 1:
             return False
         bal = 0
@@ -124,7 +126,15 @@ class Blockchain:
             print('User is not authenticated to vote')
             return False
 
-        return True
+        # 2. Check the digital signature is correct
+        base_transaction = transaction.copy()
+        del base_transaction['signature']
+        del base_transaction['timestamp']
+        transaction_string = json.dumps(base_transaction, separators=(',', ':'))
+
+        print('test', verify_signature(public_key=transaction['sender'], signature=transaction['signature'], plain_text=transaction_string))
+
+        return verify_signature(public_key=transaction['sender'], signature=transaction['signature'], plain_text=transaction_string)
     
     @property
     def transactions(self):
@@ -193,7 +203,7 @@ class Blockchain:
                         "Port": str(self.port),
                         "Ip": str(self.ip),
                     }
-                    
+
                     response = requests.post(f'http://{addr}/blocks', json=new_block.__dict__, headers=headers)
                     print(f'Sent block to {addr}')
 
