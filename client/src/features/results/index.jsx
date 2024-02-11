@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import { Pie } from 'react-chartjs-2'
 import {
   Chart as ChartJS,
@@ -10,13 +10,61 @@ import {
 } from 'chart.js'
 
 const Results = ({ event, chain }) => {
+  const [countdown, setCountdown] = useState('')
+
   ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale)
 
   if (event === -1) {
     return 'no event'
   }
 
-  console.log(event)
+  const startDate = new Date(event.start_date)
+  const endDate = new Date(event.end_date)
+
+  const updateCountdown = () => {
+    const now = new Date()
+    if (now < startDate) {
+      const difference = startDate - now
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / 1000 / 60) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      if (seconds == 0) {
+        setCountdown('Started')
+      } else {
+        setCountdown(
+          `Starting in ${days == 0 ? '' : days + ' days'}  ${
+            hours == 0 ? '' : hours + ' hours'
+          } ${minutes == 0 ? '' : minutes + ' minutes'} ${
+            seconds == 0 ? '' : seconds + ' seconds'
+          }`
+        )
+      }
+    } else {
+      const difference = endDate - now
+
+      if (difference <= 0) {
+        clearInterval(intervalId)
+        setCountdown('Finished')
+        return
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / 1000 / 60) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      setCountdown(
+        `Ending in ${days == 0 ? '' : days + ' days'}  ${
+          hours == 0 ? '' : hours + ' hours'
+        } ${minutes == 0 ? '' : minutes + ' minutes'} ${
+          seconds == 0 ? '' : seconds + ' seconds'
+        }`
+      )
+    }
+  }
+  const intervalId = setInterval(updateCountdown, 1000)
 
   const votesData = chain
     .slice(1)
@@ -62,7 +110,9 @@ const Results = ({ event, chain }) => {
   return (
     <div className='card w-full bg-base-100 shadow-xl'>
       <div className='card-body'>
-        <h1 className='card-title text-secondary'>{event.name}</h1>
+        <h1 className='card-title text-secondary'>
+          {event.name} - {countdown}
+        </h1>
         <div className='h-96 flex justify-center m-5'>
           <Pie ref={chartRef} data={data} />
         </div>

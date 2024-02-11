@@ -7,21 +7,23 @@ import random
 class Block:
     max_nonce = 2**32 - 1
 
-    def __init__(self, index, transactions, timestamp, previous_hash, nonce = 0):
+    def __init__(self, index, transactions, timestamp, previous_hash, poller='', nonce = 0):
         self.index = index
         self.transactions = transactions
         self.timestamp = timestamp
         self.previous_hash = str(previous_hash)
+        self.poller = poller
         self.nonce = nonce
 
     @staticmethod
     def load(block_dict):
         block = Block(
-            block_dict['index'],
-            block_dict['transactions'],
-            block_dict['timestamp'],
-            block_dict['previous_hash'],
-            block_dict['nonce'],
+            index=block_dict['index'],
+            transactions=block_dict['transactions'],
+            timestamp=block_dict['timestamp'],
+            previous_hash=block_dict['previous_hash'],
+            poller=block_dict['poller'],
+            nonce=block_dict['nonce'],
         )
         block.hash = block_dict['hash']
         return block

@@ -4,11 +4,10 @@ import { pollerUrls } from '../constants'
 const getEvent = async () => {
   // Send request to every trusted poller
   const requests = pollerUrls.map((addr) =>
-    axios.get(`${addr}/event`).catch((err) => err)
+    axios.get(`${addr}/event`).catch((err) => console.log(err))
   )
 
   const responses = await Promise.all(requests)
-
   const successfulResponses = responses.filter(
     (response) => response && response.status === 200
   )

@@ -27,6 +27,9 @@ def get_event():
 # Endpoint to add a transaction to the mempool
 @app.route('/transaction', methods=['POST'])
 def add_transaction():
+    if not blockchain.event_active:
+        return "No event not active", 503
+
     tx_data = request.get_json()
 
     tx_data["timestamp"] = time.time()
@@ -56,6 +59,9 @@ def add_block():
     # 4. Starting mining on new block
     global blockchain
 
+    port = request.headers.get('Port')
+    ip = request.headers.get('Ip')
+
     data = request.get_json()
     block = Block.load(data)
     block.hash = data["hash"]
@@ -71,7 +77,7 @@ def add_block():
         elif block.index > previous_block.index:
             # Get chain
             try:
-                response = requests.get(f'http://{addr}/chain')
+                response = requests.get(f'http://{ip}:{port}/chain')
                 response.raise_for_status()
 
                 data = response.data
@@ -117,7 +123,7 @@ def add_poller():
 
     return blockchain.chain_dict
 
-def join_network(ip, port):
+def join_network(ip, port, poller):
     global blockchain
 
     trusted_pollers = os.environ.get('TRUSTED_POLLERS', '[]')
@@ -191,6 +197,7 @@ def join_network(ip, port):
         blockchain.pollers = pollers
         blockchain.port = port
         blockchain.ip = ip
+        blockchain.poller = poller
 
         print('Connection successfull')
         return True
@@ -202,27 +209,27 @@ if __name__ == "__main__":
     parser.add_argument('-p', '--port', default=5000, type=int)
     parser.add_argument('-f', '--first', default=False, type=bool)
     parser.add_argument('-l', '--local', default=True, type=bool)
+    parser.add_argument('-r', '--reward', default='', type=str)
     args = parser.parse_args()
     port = args.port
+
+    # Whether to use local addresses
     local = args.local
+
+    # Wallet address of the poller so rewards can be claimed
+    poller = args.reward
+
     first_poller = args.first
 
     if not first_poller:
         ip = '127.0.0.1' if local else get_ip()
 
-        while not join_network(ip=ip, port=port):
+        while not join_network(ip=ip, port=port, poller=poller):
             time.sleep(5)
             print('Retrying connection')
     else:
         blockchain.port = port
-        blockchain.create_genesis_block()
+        blockchain.poller = poller
+        blockchain.create_genesis_block(duration=4)
 
     app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
-
-
-    
-
-# Endpoints
-# add_node 3
-# add_transaction 1
-# add_block (and validate_block) 2

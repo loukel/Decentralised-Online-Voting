@@ -1,8 +1,6 @@
 {
   "name": "General Election",
   "description": "",
-  "start_date": "01/01/01",
-  "end_date": "01/01/01",
   "candidates": [
     {
       "id": "a7f2d8cedf7473d61b0277d8e54a9ce844b4fa055260d63dc71833d798f8c942",

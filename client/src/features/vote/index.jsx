@@ -9,6 +9,59 @@ const Vote = ({ event }) => {
   const [id, setId] = useState('')
   // const [secretKey, setSecretKey] = useState('')
   const [selectedOption, setSelectedOption] = useState(-1)
+  const [countdown, setCountdown] = useState('')
+  const [disabled, setDisabled] = useState(true)
+
+  const startDate = new Date(event.start_date)
+  const endDate = new Date(event.end_date)
+
+  const updateCountdown = () => {
+    const now = new Date()
+    if (now < startDate) {
+      const difference = startDate - now
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / 1000 / 60) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      if (seconds == 0) {
+        setCountdown('Started')
+      } else {
+        setCountdown(
+          ` - Starting in ${days == 0 ? '' : days + ' days'}  ${
+            hours == 0 ? '' : hours + ' hours'
+          } ${minutes == 0 ? '' : minutes + ' minutes'} ${
+            seconds == 0 ? '' : seconds + ' seconds'
+          }`
+        )
+      }
+    } else {
+      const difference = endDate - now
+
+      if (difference <= 0) {
+        clearInterval(intervalId)
+        setCountdown(' - Finished')
+        setDisabled(true)
+        return
+      } else {
+        setDisabled(false)
+      }
+
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference / (1000 * 60 * 60)) % 24)
+      const minutes = Math.floor((difference / 1000 / 60) % 60)
+      const seconds = Math.floor((difference / 1000) % 60)
+
+      setCountdown(
+        ` - Ending in ${days == 0 ? '' : days + ' days'}  ${
+          hours == 0 ? '' : hours + ' hours'
+        } ${minutes == 0 ? '' : minutes + ' minutes'} ${
+          seconds == 0 ? '' : seconds + ' seconds'
+        }`
+      )
+    }
+  }
+  const intervalId = setInterval(updateCountdown, 1000)
 
   const onSubmit = async () => {
     if (!id) {
@@ -42,7 +95,9 @@ const Vote = ({ event }) => {
   return (
     <div class='card w-full bg-base-100 shadow-xl'>
       <div class='card-body'>
-        <h1 class='card-title text-secondary'>Voting Form - {event.name}</h1>
+        <h1 class='card-title text-secondary'>
+          Voting Form: {event.name} {countdown}
+        </h1>
         {/* ID input */}
         <label className='form-control w-full'>
           <div className='label'>
@@ -75,7 +130,11 @@ const Vote = ({ event }) => {
           setSelectedOption={setSelectedOption}
         />
         <div className='card-actions mx-auto'>
-          <button className='btn btn-secondary w-40' onClick={onSubmit}>
+          <button
+            className='btn btn-secondary w-40'
+            onClick={onSubmit}
+            disabled={disabled}
+          >
             Submit
           </button>
         </div>

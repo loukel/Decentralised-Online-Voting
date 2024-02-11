@@ -3,19 +3,23 @@ from event import EventBlock, load_event
 import time
 import threading
 import requests
+from datetime import datetime, timedelta
+from dateutil import parser
 
 class Blockchain:
-    difficulty = 5
+    difficulty = 4
     tx_per_block = 1
 
     def __init__(self):
         self.mempool = []
         self.chain = []
         self.pollers = []
+        self.poller = ''
         self.ip = ''
         self.port = ''
         self.interrupt_mining = threading.Event()
         self.mining_thread = None
+        self.current_event = None
 
     @classmethod
     def load(cls, chain):
@@ -34,17 +38,36 @@ class Blockchain:
 
         blockchain.mempool = self.mempool
         blockchain.pollers = self.pollers
+        blockchain.poller = self.poller
         blockchain.ip = self.ip
         blockchain.port = self.port
 
         return blockchain
         
-    
     @property
     def last_event(self):
-        for block in self.chain[::-1]:
-            if isinstance(block, EventBlock):
-                return block
+        if self.current_event == None:
+            for block in self.chain[::-1]:
+                if isinstance(block, EventBlock):
+                    self.event = block
+                    return block
+        else:
+            if self.event_active:
+                return self.current_event
+            
+    @property
+    def event_active(self):
+        event = self.last_event.event
+
+        start_time = parser.isoparse(event['start_date'])
+        end_time = parser.isoparse(event['end_date'])
+        now = datetime.now(start_time.tzinfo)
+
+        if start_time <= now <= end_time:
+            return True
+        else:
+            self.current_event = None
+            return False
             
     @property
     def last_block(self):
@@ -54,7 +77,7 @@ class Blockchain:
     def chain_dict(self):
         return [b.__dict__ for b in self.chain]
     
-    def create_genesis_block(self, eventLoc='event.json', register='register.txt'):
+    def create_genesis_block(self, eventLoc='event.json', register='register.txt', duration=3):
         register_file = open(register, 'r')
         public_ids = register_file.read().splitlines()
 
@@ -66,11 +89,21 @@ class Blockchain:
 
         event = load_event(eventLoc)
 
-        genesis_block = EventBlock(index=0, transactions=transactions, timestamp=time.time(), previous_hash="0", nonce=0, event=event)
+        # Set the start and end date time
+        buffer = timedelta(minutes=0)
+        start = datetime.now() + buffer
+        duration_minutes = timedelta(minutes=duration)
+        end = start + duration_minutes
 
-        self.proof_of_work(genesis_block)
+        event['start_date'] = start.isoformat()
+        event['end_date'] = end.isoformat()
 
-        genesis_block.hash = genesis_block.compute_hash()
+        genesis_block = EventBlock(index=0, transactions=transactions, timestamp=time.time(), previous_hash="0", nonce=0, event=event, poller=self.poller)
+
+        print('Started mining genesis block')
+        proof = self.proof_of_work(genesis_block)
+
+        genesis_block.hash = proof
 
         self.chain.append(genesis_block)
     
@@ -78,9 +111,10 @@ class Blockchain:
         # Check transaction is in mempool, check spender has the funds
         if transaction['amount'] != 1:
             return False
-
         bal = 0
-        for tx in self.transactions:
+        all_transactions = self.transactions
+
+        for tx in all_transactions:
             if tx['sender'] == transaction['sender']:
                 bal -= tx['amount']
             if tx['receiver'] == transaction['sender']:
@@ -89,7 +123,7 @@ class Blockchain:
         if bal != 1:
             print('User is not authenticated to vote')
             return False
-        
+
         return True
     
     @property
@@ -120,7 +154,7 @@ class Blockchain:
         if len(self.mempool) >= Blockchain.tx_per_block:
             self.interrupt_mining.clear()
             if self.mining_thread and self.mining_thread.is_alive():
-                return  # Mining is already running
+                return
             self.mining_thread = threading.Thread(target=self.mine)
             self.mining_thread.start()
 
@@ -135,7 +169,8 @@ class Blockchain:
         new_block = Block(index=last_block.index + 1,
                 transactions=transactions,
                 timestamp=time.time(),
-                previous_hash=last_block.hash)
+                previous_hash=last_block.hash,
+                poller=self.poller)
         
         print('Started mining')
         # if self.port != 5001:
@@ -158,6 +193,7 @@ class Blockchain:
                         "Port": str(self.port),
                         "Ip": str(self.ip),
                     }
+                    
                     response = requests.post(f'http://{addr}/blocks', json=new_block.__dict__, headers=headers)
                     print(f'Sent block to {addr}')
 
@@ -180,7 +216,7 @@ class Blockchain:
         while not self.valid_hash(computed_hash) and not self.interrupt_mining.is_set():
             block.nonce = Block.random_nonce()
             computed_hash = block.compute_hash()
-            print(computed_hash)
+            # print(computed_hash)
 
         return computed_hash if self.valid_hash(computed_hash) else None
     
@@ -228,6 +264,7 @@ class Blockchain:
         # Validate transaction
         for tx in unchecked_txs:
             if not self.validate_tx(tx):
+
                 return False
 
         # 2. Check the hash  is validate

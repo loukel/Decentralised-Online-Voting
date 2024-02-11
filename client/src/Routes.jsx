@@ -15,7 +15,9 @@ export const AppRoutes = () => {
       .then((e) => {
         setEvent(e)
       })
-      .catch((e) => {})
+      .catch((e) => {
+        console.log(e)
+      })
   }, [])
 
   useEffect(() => {
@@ -26,7 +28,9 @@ export const AppRoutes = () => {
           setChain(c)
           setLoading(false)
         })
-        .catch((e) => {})
+        .catch((e) => {
+          console.log(e)
+        })
     }
   }, [event])
 

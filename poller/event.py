@@ -6,19 +6,20 @@ def load_event(loc):
         return json.load(json_file)
 
 class EventBlock(Block):
-    def __init__(self, index, transactions, timestamp, previous_hash, nonce, event):
-        super().__init__(index, transactions, timestamp, previous_hash, nonce)
+    def __init__(self, index, transactions, timestamp, previous_hash, poller, nonce, event):
+        super().__init__(index=index, transactions=transactions, timestamp=timestamp, previous_hash=previous_hash, poller=poller, nonce=nonce)
         self.event = event
 
     @staticmethod
     def load(block_dict):
         event_block = EventBlock(
-            block_dict['index'],
-            block_dict['transactions'],
-            block_dict['timestamp'],
-            block_dict['previous_hash'],
-            block_dict['nonce'], 
-            block_dict['event'],
+            index=block_dict['index'],
+            transactions=block_dict['transactions'],
+            timestamp=block_dict['timestamp'],
+            previous_hash=block_dict['previous_hash'],
+            nonce=block_dict['nonce'], 
+            poller=block_dict['poller'],
+            event=block_dict['event'],
         )
 
         event_block.hash = block_dict['hash']
