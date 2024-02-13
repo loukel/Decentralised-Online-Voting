@@ -1,10 +1,11 @@
 const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const CryptoJS = require('crypto-js')
+const bcrypt = require('bcrypt')
 
-const hashIdentity = (plaintext, secretKey) => {
-  return CryptoJS.HmacSHA256(plaintext, secretKey).toString()
-}
+// const hashIdentity = (plaintext, secretKey) => {
+//   return CryptoJS.HmacSHA256(plaintext, secretKey).toString()
+// }
 
 const create_vote = async (req, res) => {
   const data = req.body
@@ -22,7 +23,7 @@ const create_vote = async (req, res) => {
       },
     })
 
-    if (user.password != data.secretKey) {
+    if (await bcrypt.compare(user.password, data.secretKey)) {
       return res.sendStatus(403)
     }
 
