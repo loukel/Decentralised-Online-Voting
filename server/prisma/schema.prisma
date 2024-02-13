@@ -29,11 +29,15 @@ model EventOption {
 }
 
 model Vote {
-  hashedUserId String      @unique
-  optionId     Int
-  option       EventOption @relation(fields: [optionId], references: [id])
+  username String
+  optionId Int
+  option   EventOption @relation(fields: [optionId], references: [id])
+  eventId  Int
+
+  @@unique([username, eventId])
 }
 
 model User {
-  id Int @id @default(autoincrement())
+  username String @id
+  password String
 }

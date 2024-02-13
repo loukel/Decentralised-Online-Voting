@@ -13,12 +13,30 @@ const create_vote = async (req, res) => {
     // Make it so user provides public key, then store the public key -> user's identity is public key (secret key), identity is stored in another table?
 
     // Hash user identity
-    const hashedUserId = hashIdentity(data.userId, data.secretKey)
+    // const hashedUserId = hashIdentity(data.userId, data.secretKey)
+
+    // Check user has correct password
+    const user = await prisma.user.findFirst({
+      where: {
+        username: data.userId,
+      },
+    })
+
+    if (user.password != data.secretKey) {
+      return res.sendStatus(403)
+    }
+
+    const option = await prisma.eventOption.findFirst({
+      where: {
+        id: data.optionId,
+      },
+    })
 
     const vote = await prisma.vote.create({
       data: {
-        hashedUserId,
+        username: user.username,
         optionId: data.optionId,
+        eventId: option.eventId,
       },
     })
 

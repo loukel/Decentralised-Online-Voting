@@ -48,7 +48,12 @@ const Vote = ({ event }) => {
       optionId: selectedOption.id,
     }
     const vote = await createVote(data)
-    navigate(`/results?hasedUserId=${vote.hashedUserId}`)
+
+    if (vote == false) {
+      alert('Unauthorised!')
+    } else {
+      navigate(`/results?hasedUserId=${vote.hashedUserId}`)
+    }
   }
 
   if (event === -1) {

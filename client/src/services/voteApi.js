@@ -11,7 +11,7 @@ const createVote = async (data) => {
     return res.data
   } catch (error) {
     console.error(error)
-    return error
+    return false
   }
 }
 
