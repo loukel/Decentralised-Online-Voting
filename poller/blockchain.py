@@ -132,8 +132,6 @@ class Blockchain:
         del base_transaction['timestamp']
         transaction_string = json.dumps(base_transaction, separators=(',', ':'))
 
-        print('test', verify_signature(public_key=transaction['sender'], signature=transaction['signature'], plain_text=transaction_string))
-
         return verify_signature(public_key=transaction['sender'], signature=transaction['signature'], plain_text=transaction_string)
     
     @property
@@ -161,7 +159,8 @@ class Blockchain:
         self.mempool = [tx for tx in self.mempool if tx not in block.transactions]
 
     def start_mining(self):
-        if len(self.mempool) >= Blockchain.tx_per_block:
+        # Start mining if there are enough transactions or the event is over
+        if len(self.mempool) >= Blockchain.tx_per_block or (not self.event_active and len(self.mempools) != 0):
             self.interrupt_mining.clear()
             if self.mining_thread and self.mining_thread.is_alive():
                 return
