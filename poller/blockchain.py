@@ -10,7 +10,7 @@ import json
 
 class Blockchain:
     difficulty = 4
-    tx_per_block = 1
+    tx_per_block = 2
 
     def __init__(self):
         self.mempool = []
@@ -22,6 +22,9 @@ class Blockchain:
         self.interrupt_mining = threading.Event()
         self.mining_thread = None
         self.current_event = None
+        self.checker_thread = None
+        self.blocked = False
+        self.destroyed = False
 
     @classmethod
     def load(cls, chain):
@@ -82,6 +85,7 @@ class Blockchain:
     def create_genesis_block(self, eventLoc='event.json', register='register.txt', duration=3):
         register_file = open(register, 'r')
         public_ids = register_file.read().splitlines()
+        register_file.close()
 
         transactions = [{
             "amount": 1,
@@ -108,6 +112,8 @@ class Blockchain:
         genesis_block.hash = proof
 
         self.chain.append(genesis_block)
+
+        self.start_mining()
     
     def validate_tx(self, transaction):
         # 1. Check transaction is in mempool, check spender has the funds
@@ -121,7 +127,7 @@ class Blockchain:
                 bal -= tx['amount']
             if tx['receiver'] == transaction['sender']:
                 bal += tx['amount']
-
+            
         if bal != 1:
             print('User is not authenticated to vote')
             return False
@@ -146,9 +152,6 @@ class Blockchain:
         # Validate tx
         if self.validate_tx(transaction):
             self.mempool.append(transaction)
-
-            # Or pass end_date
-            self.start_mining()
         else:
             raise ValueError('Invalid key')
 
@@ -156,19 +159,28 @@ class Blockchain:
         self.chain.append(block)
 
         # Remove transactions that have been added
-        self.mempool = [tx for tx in self.mempool if tx not in block.transactions]
+        self.refresh_mempool()
+
+        self.blocked = False
 
     def start_mining(self):
         # Start mining if there are enough transactions or the event is over
-        if len(self.mempool) >= Blockchain.tx_per_block or (not self.event_active and len(self.mempools) != 0):
-            self.interrupt_mining.clear()
-            if self.mining_thread and self.mining_thread.is_alive():
-                return
-            self.mining_thread = threading.Thread(target=self.mine)
-            self.mining_thread.start()
+        self.checker_thread = threading.Thread(target=self.check_to_mine)
+        self.checker_thread.start()
+
+    def check_to_mine(self):
+        while not self.destroyed:
+            if (len(self.mempool) >= Blockchain.tx_per_block or (not self.event_active and len(self.mempool) != 0)) and not self.blocked:
+                self.interrupt_mining.clear()
+                if self.mining_thread and self.mining_thread.is_alive():
+                    return
+                self.mining_thread = threading.Thread(target=self.mine)
+                self.mining_thread.start()
+            time.sleep(2)
 
     def stop_mining(self):
         self.interrupt_mining.set()
+        self.blocked = True
     
     def mine(self):
         last_block = self.last_block
@@ -182,8 +194,6 @@ class Blockchain:
                 poller=self.poller)
         
         print('Started mining')
-        # if self.port != 5001:
-            # time.sleep(5)
         
         # What happens if block receives a block before proof is calculated or at the same etc -> requires thread that stops in this case
         proof = self.proof_of_work(new_block)
@@ -273,7 +283,6 @@ class Blockchain:
         # Validate transaction
         for tx in unchecked_txs:
             if not self.validate_tx(tx):
-
                 return False
 
         # 2. Check the hash  is validate
@@ -287,6 +296,14 @@ class Blockchain:
             return False
 
     def refresh_mempool(self):
-        added_transactions = self.transactions
-        self.mempool = [tx for tx in self.mempool if tx not in added_transactions]
+        added_transactions = [{'amount': tx['amount'], 'sender': tx['sender'], 'receiver': tx['receiver']} for tx in self.transactions]
+        self.mempool = [tx for tx in self.mempool if {'amount': tx['amount'], 'sender': tx['sender'], 'receiver': tx['receiver']} not in added_transactions]
+
+    def destroy(self):
+        self.stop_mining()  # Signal all threads to stop
+        self.destroyed = True
+        if self.checker_thread.is_alive():
+            self.checker_thread.join()  # Wait for the mining thread to finish
+
+        del self
 

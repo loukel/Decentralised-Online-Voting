@@ -124,6 +124,11 @@ const Results = ({ event, chain }) => {
             </div>
           ))}
         </div>
+        <div className='flex gap-5 justify-center flex-wrap'>
+          <h1 className='card-title text-secondary'>
+            {totalVotes} / {chain[0].transactions.length}
+          </h1>
+        </div>
       </div>
     </div>
   )

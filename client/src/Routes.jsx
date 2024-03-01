@@ -21,16 +21,25 @@ export const AppRoutes = () => {
   }, [])
 
   useEffect(() => {
-    if (event != -1) {
-      // Change this so it just fetches the chain then calculate the last event
-      getChain()
-        .then((c) => {
-          setChain(c)
-          setLoading(false)
-        })
-        .catch((e) => {
-          console.log(e)
-        })
+    let intervalId
+
+    if (event !== -1) {
+      intervalId = setInterval(() => {
+        getChain()
+          .then((c) => {
+            setChain(c)
+            setLoading(false)
+          })
+          .catch((e) => {
+            console.log(e)
+          })
+      }, 1000)
+    }
+
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId) // Clear the interval when the component unmounts or event changes
+      }
     }
   }, [event])
 

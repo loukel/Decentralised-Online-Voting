@@ -96,19 +96,23 @@ def add_block():
             blockchain.add_block(block)
             return "Success", 201
         elif block.index > previous_block.index:
+            print('longer chain found')
             # There's a chain that is longer
             try:
                 # Fetch longer chain
-                response = requests.get(f'http://{ip}:{port}/chain')
+                address = f'http://{ip}:{port}'
+                response = requests.get(f'{address}/chain')
                 response.raise_for_status()
 
                 # Get blockchain based on data from the old chain (pollers etc)
-                data = response.data
+                data = response.json()
+
                 new_blockchain = blockchain.template(data)
 
                 if new_blockchain.valid:
                     # Stop mining and get new blockchain
-                    blockchain.stop_mining()
+                    blockchain.destroy()
+                    print('new chain')
                     blockchain = new_blockchain
 
                     # Remove added transactions
@@ -117,7 +121,10 @@ def add_block():
                     # Start mining a new block
                     blockchain.start_mining()
                     return "Success", 2001
-            except:
+                else:
+                    print('longer chain invalid')
+            except Exception as e:
+                print(e)
                 return "Not Accepted", 406
 
     return "Not Accepted", 406
@@ -221,6 +228,8 @@ def join_network(ip, port, poller):
         blockchain.port = port
         blockchain.ip = ip
         blockchain.poller = poller
+
+        blockchain.start_mining()
 
         print('Connection successfull')
         return True

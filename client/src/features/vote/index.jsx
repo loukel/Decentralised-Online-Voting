@@ -2,7 +2,6 @@ import { useState } from 'react'
 import Options from './Options'
 import { broadcastVote, getSignature } from '../../services/voteApi'
 import { useNavigate } from 'react-router-dom'
-import EC from 'elliptic'
 
 const Vote = ({ event }) => {
   const navigate = useNavigate()
