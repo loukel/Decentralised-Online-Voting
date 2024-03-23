@@ -4,7 +4,7 @@ import { pollerUrls } from '../constants'
 const getEvent = async () => {
   // Send request to every trusted poller
   const requests = pollerUrls.map((addr) =>
-    axios.get(`${addr}/event`).catch((err) => console.log(err))
+    axios.get(`${addr}/event`).catch((err) => err)
   )
 
   const responses = await Promise.all(requests)
@@ -12,11 +12,14 @@ const getEvent = async () => {
     (response) => response && response.status === 200
   )
 
-  const events = successfulResponses.map((res) => res.data)
+  if (successfulResponses.length) {
+    const events = successfulResponses.map((res) => res.data)
 
-  // Get the mode event
-
-  return events[0]
+    // Get the mode event
+    return events[0]
+  } else {
+    return -1
+  }
 }
 
 export { getEvent }
